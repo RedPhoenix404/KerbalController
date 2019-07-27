@@ -60,7 +60,7 @@ int XRValue = 0;
 int YRValue = 0;
 int ZRValue = 0;
 
-// Setting Switch-variables
+// Setting initial Switch-variables
 int NS1pos = LOW;
   int NS1PrevPos  = LOW;
 int NS2pos = LOW;
@@ -80,7 +80,7 @@ int SS1pos = LOW;
 int SS2pos = LOW;
   int SS2PrevPos  = LOW;
 
-// Setting Button-variables
+// Setting initial Button-variables
 int JB1pos = LOW;
   int JB1PrevPos  = LOW;
 int JB2pos = LOW;
@@ -100,8 +100,7 @@ int Bt5pos = LOW;
 
 Adafruit_MCP23017 mcp;
 
-void setup() {
- // setup code here, to run once:
+void setup() {  // setup code here, to run once:
 
  // Initialize Shift Register
  mcp.begin();      // Default device address 0
@@ -172,9 +171,9 @@ YRValue = (analogRead(A4));
 ZRValue = (analogRead(A5));
   Joystick[1].setZAxis(ZRValue);
 
-// Reading button positions, and executing keyboard/mouse presses is buttons are pressed
+// Reading button positions, and executing keyboard/mouse presses if buttons are pressed
 JB1pos = mcp.digitalRead(JB1); // read the SwitchPin
-  if(JB1pos != JB1PrevPos  && (JB1PrevPos==LOW)){ // compare the SwitchState to its previous state, execute keyboard.write if different
+  if(JB1pos != JB1PrevPos  && (JB1PrevPos==LOW)){ // compare the ButtonState to its previous state, execute keyboard.write if different
     Keyboard.write ('f');
     }
   JB1PrevPos = JB1pos; // save the current state as the last state, for next time through the loop

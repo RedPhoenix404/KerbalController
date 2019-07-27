@@ -1,0 +1,282 @@
+#include "Wire.h"
+#include "Keyboard.h"
+#include "Adafruit_MCP23017.h"
+#include "Joystick.h"
+#include "Mouse.h"
+
+#define JOYSTICK_COUNT 2
+
+Joystick_ Joystick[JOYSTICK_COUNT] = {
+Joystick_(0x03,JOYSTICK_TYPE_JOYSTICK,
+  0, 0,                  // Button Count, Hat Switch Count
+  true, true, true,      // X, Y and Z Axis
+  false, false, false,   // No Rx, Ry, or Rz
+  false, false,          // No rudder or throttle
+  false, false, false),  // No accelerator, brake, or steering
+Joystick_(0x04,JOYSTICK_TYPE_JOYSTICK,
+  0, 0,                  // Button Count, Hat Switch Count
+  true, true, true,      // X, Y and Z Axis
+  false, false, false,   // No Rx, Ry, or Rz
+  false, false,          // No rudder or throttle
+  false, false, false)  // No accelerator, brake, or steering
+};
+
+// Defining the analog (joystick-potentiometer) pins, wired to the Arduino
+const int Analog1 = A0; // L-joystick, X-axis (left/right)
+const int Analog2 = A1; // L-joystick, Y-axis (up/down)
+const int Analog3 = A2; // L-joystick, Z-axis (turn)
+const int Analog4 = A3; // R-joystick, X-axis (left/right)
+const int Analog5 = A4; // R-joystick, Y-axis (up/down)
+const int Analog6 = A5; // R-joystick, Z-axis (turn)
+
+// Defining the digital (switches) pins, wired to the Arduino
+const int SS1 = 7; // SafetySwitch1
+const int SS2 = 6; // SafetySwitch2
+
+// Defining the digital (switches) pins, wired via the ShiftRegister
+const int NS1 = 8; // NormalSwitch1
+const int NS2 = 9; // NormalSwitch2
+const int NS3 = 10; // NormalSwitch3
+const int NS4 = 11; // NormalSwitch4
+const int NS5 = 12; // NormalSwitch5
+const int NS6 = 13; // NormalSwitch6
+const int NS7 = 14; // NormalSwitch7
+
+// Defining the digital (buttons) pins, wired via the ShiftRegister
+const int JB1 = 5; // JoystickButton1, the button on the left joystick
+const int JB2 = 15; // JoystickButton2, the button on the right joystick
+const int LB = 6; // Big 'Launch' button
+const int Bt1 = 4; // Button1
+const int Bt2 = 3; // Button2
+const int Bt3 = 2; // Button3
+const int Bt4 = 1; // Button4
+const int Bt5 = 0; // Button5
+
+// Setting initial Joystick-axis-variables
+int XLValue = 0;
+int YLValue = 0;
+int ZLValue = 0;
+int XRValue = 0;
+int YRValue = 0;
+int ZRValue = 0;
+
+// Setting Switch-variables
+int NS1pos = LOW;
+  int NS1PrevPos  = LOW;
+int NS2pos = LOW;
+  int NS2PrevPos  = LOW;
+int NS3pos = LOW;
+  int NS3PrevPos  = LOW;
+int NS4pos = LOW;
+  int NS4PrevPos  = LOW;
+int NS5pos = LOW;
+  int NS5PrevPos  = LOW;
+int NS6pos = LOW;
+  int NS6PrevPos  = LOW;
+int NS7pos = LOW;
+  int NS7PrevPos  = LOW;
+int SS1pos = LOW;
+  int SS1PrevPos  = LOW;
+int SS2pos = LOW;
+  int SS2PrevPos  = LOW;
+
+// Setting Button-variables
+int JB1pos = LOW;
+  int JB1PrevPos  = LOW;
+int JB2pos = LOW;
+  int JB2PrevPos  = LOW;
+int LBpos = LOW;
+  int LBPrevPos  = LOW;
+int Bt1pos = LOW;
+  int Bt1PrevPos  = LOW;
+int Bt2pos = LOW;
+  int Bt2PrevPos  = LOW;
+int Bt3pos = LOW;
+  int Bt3PrevPos  = LOW;
+int Bt4pos = LOW;
+  int Bt4PrevPos  = LOW;
+int Bt5pos = LOW;
+  int Bt5PrevPos  = LOW;
+
+Adafruit_MCP23017 mcp;
+
+void setup() {
+ // setup code here, to run once:
+
+ // Initialize Shift Register
+ mcp.begin();      // Default device address 0
+
+ //Initialize Keyboard and mouse
+ Keyboard.begin();
+ Mouse.begin();
+
+ // Define Shift Register buttons
+ mcp.pinMode(JB1, INPUT);
+  mcp.pullUp(JB1, HIGH);
+ mcp.pinMode(JB2, INPUT);
+  mcp.pullUp(JB2, HIGH);
+ mcp.pinMode(LB, INPUT);
+  mcp.pullUp(LB, HIGH);
+ mcp.pinMode(Bt1, INPUT);
+  mcp.pullUp(Bt1, HIGH);
+ mcp.pinMode(Bt2, INPUT);
+  mcp.pullUp(Bt2, HIGH);
+ mcp.pinMode(Bt3, INPUT);
+  mcp.pullUp(Bt3, HIGH);
+ mcp.pinMode(Bt4, INPUT);
+  mcp.pullUp(Bt4, HIGH);
+ mcp.pinMode(Bt5, INPUT);
+  mcp.pullUp(Bt5, HIGH);
+
+ // Define Shift Register Switches
+ mcp.pinMode(NS1, INPUT);
+  mcp.pullUp(NS1, HIGH);
+ mcp.pinMode(NS2, INPUT);
+  mcp.pullUp(NS2, HIGH);
+ mcp.pinMode(NS3, INPUT);
+  mcp.pullUp(NS3, HIGH);
+ mcp.pinMode(NS4, INPUT);
+  mcp.pullUp(NS4, HIGH);
+ mcp.pinMode(NS5, INPUT);
+  mcp.pullUp(NS5, HIGH);
+ mcp.pinMode(NS6, INPUT);
+  mcp.pullUp(NS6, HIGH);
+ mcp.pinMode(NS7, INPUT);
+  mcp.pullUp(NS7, HIGH);
+
+ // Define Safety Switches
+ pinMode(SS1, INPUT);
+ pinMode(SS2, INPUT);
+ 
+ // Initialize Joystick
+ Joystick[0].begin(); // Left-joystick
+ Joystick[1].begin(); // Right-joystick
+  
+}
+
+void loop() {
+  // main code here, to run repeatedly:
+
+// Reading and setting the joystick-axis positions
+XLValue = (analogRead(A0));
+  Joystick[0].setXAxis(XLValue);
+YLValue = (analogRead(A1));
+  Joystick[0].setYAxis(YLValue);
+ZLValue = (analogRead(A2));
+  Joystick[0].setZAxis(ZLValue);
+
+XRValue = (analogRead(A3));
+  Joystick[1].setXAxis(XRValue);
+YRValue = (analogRead(A4));
+  Joystick[1].setYAxis(YRValue);
+ZRValue = (analogRead(A5));
+  Joystick[1].setZAxis(ZRValue);
+
+// Reading button positions, and executing keyboard/mouse presses is buttons are pressed
+JB1pos = mcp.digitalRead(JB1); // read the SwitchPin
+  if(JB1pos != JB1PrevPos  && (JB1PrevPos==LOW)){ // compare the SwitchState to its previous state, execute keyboard.write if different
+    Keyboard.write ('f');
+    }
+  JB1PrevPos = JB1pos; // save the current state as the last state, for next time through the loop
+  
+JB2pos = mcp.digitalRead(JB2); //
+  if(JB2pos != JB2PrevPos  && (JB2PrevPos==LOW)){
+    Mouse.click();
+    }
+  JB2PrevPos = JB2pos;
+  
+LBpos = mcp.digitalRead(LB);
+  if(LBpos != LBPrevPos  && (LBPrevPos==LOW)){
+    Keyboard.write (' ');
+    }
+  LBPrevPos = LBpos;
+  
+Bt1pos = mcp.digitalRead(Bt1);
+  if(Bt1pos != Bt1PrevPos  && (Bt1PrevPos==LOW)){
+    Keyboard.write ('>');
+    }
+  Bt1PrevPos = Bt1pos;
+  
+Bt2pos = mcp.digitalRead(Bt2);
+  if(Bt2pos != Bt2PrevPos  && (Bt2PrevPos==LOW)){
+    Keyboard.write ('<');
+    }
+  Bt2PrevPos = Bt2pos;
+  
+Bt3pos = mcp.digitalRead(Bt3);
+  if(Bt3pos != Bt3PrevPos  && (Bt3PrevPos==LOW)){
+    Keyboard.write ('u');
+    }
+  Bt3PrevPos = Bt3pos;
+  
+Bt4pos = mcp.digitalRead(Bt4);
+  if(Bt4pos != Bt4PrevPos  && (Bt4PrevPos==LOW)){
+    Keyboard.write ('i');
+    }
+  Bt4PrevPos = Bt4pos;
+  
+Bt5pos = mcp.digitalRead(Bt5);
+  if(Bt5pos != Bt5PrevPos  && (Bt5PrevPos==LOW)){
+    Keyboard.write ('o');
+    }
+  Bt5PrevPos = Bt5pos;
+
+// Reading/executing switch positions/actions
+NS1pos = mcp.digitalRead(NS1); // read the SwitchPin
+  if(NS1pos != NS1PrevPos){ // compare the SwitchState to its previous state, execute keyboard.write if different
+    Keyboard.write ('1');
+    }
+  NS1PrevPos = NS1pos; // save the current state as the last state, for next time through the loop
+  
+NS2pos = mcp.digitalRead(NS2);
+  if(NS2pos != NS2PrevPos){
+    Keyboard.write ('2');
+    }
+  NS2PrevPos = NS2pos;
+  
+NS3pos = mcp.digitalRead(NS3);
+  if(NS3pos != NS3PrevPos){
+    Keyboard.write ('3');
+    }
+  NS3PrevPos = NS3pos;
+
+NS4pos = mcp.digitalRead(NS4);
+  if(NS4pos != NS4PrevPos){
+    Keyboard.write ('4');
+    }
+  NS4PrevPos = NS4pos;
+
+NS5pos = mcp.digitalRead(NS5);
+  if(NS5pos != NS5PrevPos){
+    Keyboard.write ('5');
+    }
+  NS5PrevPos = NS5pos;
+
+NS6pos = mcp.digitalRead(NS6);
+  if(NS6pos != NS6PrevPos){
+    Keyboard.write ('6');
+    }
+  NS6PrevPos = NS6pos;
+
+NS7pos = mcp.digitalRead(NS7);
+  if(NS7pos != NS7PrevPos){
+    Keyboard.write ('7');
+    }
+  NS7PrevPos = NS7pos;
+
+//Reading/executing SafetySwitch positions/actions
+SS1pos = digitalRead(SS1);
+  if(SS1pos == HIGH && SS1pos != SS1PrevPos){
+    Keyboard.write ('9');
+    }
+  SS1PrevPos = SS1pos;
+
+SS2pos = digitalRead(SS2);
+  if(SS2pos == HIGH && SS2pos != SS2PrevPos){
+    Keyboard.write ('0');
+    }
+  SS2PrevPos = SS2pos;
+
+delay(50);
+
+}
